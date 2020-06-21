@@ -1,0 +1,28 @@
+name: BMD-300 Dev Board Hex
+
+on: [push]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - run: mkdir -p artifacts
+
+    - run: docker run -v $PWD/artifacts:/tmp  lifecandid/gourmetplate:build_image ${{ secrets.TEST_SEC }} sograindustries/nrf52_fw.git ${GITHUB_SHA} Release projects/proto_fw/segger/proto_fw.emProject /repo/projects/proto_fw/segger/Output/Release/Exe/proto_fw.hex /tmp/
+
+    - run: cp "${GITHUB_WORKSPACE}/components/softdevice/s132/hex/s132_nrf52_6.1.1_softdevice.hex" artifacts
+
+    - run: cp "${GITHUB_WORKSPACE}/projects/proto_fw/scripts/program.sh" artifacts
+
+    - run: echo ${GITHUB_SHA} > artifacts/commit_hash
+
+    - uses: actions/upload-artifact@v1
+      with:
+        name: "bmd_hex_outputs"
+        path: artifacts
+
