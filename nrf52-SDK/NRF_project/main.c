@@ -39,23 +39,18 @@
  */
 #include "nrf_drv_spi.h"
 #include "app_util_platform.h"
-//#include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
 #include "boards.h"
 #include "app_error.h"
-#include <string.h>
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-#include "LPFilter.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "app_uart.h"
-//#include "app_error.h"
-//#include "nrf_delay.h"
 #include "nrf.h"
 #include "bsp.h"
 #if defined (UART_PRESENT)
@@ -70,7 +65,6 @@
 #include "ADS1292_main.h"
 #include <intrinsics.h>
 #include <string.h>
-//#include "ADS1x9x_ECG_Processing.h"
 
 #define SYSUNIV_BUSIFG	SYSUNIV_SYSBUSIV
 
