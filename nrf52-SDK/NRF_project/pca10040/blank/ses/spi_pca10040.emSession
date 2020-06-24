@@ -25,9 +25,9 @@
  <Project>
   <ProjectSessionItem path="NRF-ACC-ECG"/>
   <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG"/>
+  <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;ADS1292"/>
   <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;Application"/>
-  <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;Board Definition"/>
-  <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;Board Support"/>
+  <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;nRF_Drivers"/>
   <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;nRF_Libraries"/>
   <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;nRF_Log"/>
   <ProjectSessionItem path="NRF-ACC-ECG;NRF-ACC-ECG;nRF_Segger_RTT"/>
@@ -69,15 +69,16 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="20" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292.h" selected="0" top="541" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="241" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="0" top="138" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="19" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../components/boards/acc-ecg-board.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../modules/nrfx/hal/nrf_gpio.h" selected="0" top="434" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../components/libraries/button/app_button.c" selected="0" top="90" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="0" top="12" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../integration/nrfx/legacy/nrf_drv_uart.c" selected="0" top="108" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../integration/nrfx/legacy/nrf_drv_spi.c" selected="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292_main.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="69" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="0" top="30" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="19" useTextEdit="1" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../modules/nrfx/mdk/ses_startup_nrf52.s" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../modules/nrfx/mdk/ses_startup_nrf_common.s" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../modules/nrfx/mdk/system_nrf52.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../components/libraries/button/app_button.c" selected="1" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="156" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292.c" selected="1" top="144" codecName="Default"/>
  </Files>
  <ARMCrossStudioWindow activeProject="NRF-ACC-ECG" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/song/Desktop/nrf52_fw-6481fe0164ea02dcd4e22d631757c9687b14c759/examples/peripheral/ADS1292_ver1_0613/pca10040/blank/ADS1292" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
