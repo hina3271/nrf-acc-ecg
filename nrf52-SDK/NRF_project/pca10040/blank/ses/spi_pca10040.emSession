@@ -73,8 +73,7 @@
  <Files>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="20" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292.c" selected="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292.h" selected="0" top="541" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292_main.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="50" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="30" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../ADS1292/ADS1292_main.h" selected="1" top="0" codecName="Default"/>
  </Files>
  <ARMCrossStudioWindow activeProject="ADS1292_ver1_0613" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/song/Desktop/nrf52_fw-6481fe0164ea02dcd4e22d631757c9687b14c759/examples/peripheral/ADS1292_ver1_0613/pca10040/blank/ADS1292" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
