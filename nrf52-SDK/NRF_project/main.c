@@ -75,73 +75,19 @@
  * 
  * *****************************************************************************************************/
 // Function declarations
-
-void Init_StartUp(void);
-void Init_TimerA1(void);
-unsigned char retInString(char* string);
-
-// Function declarations
-
 extern unsigned char ADS1x9xRegVal[16];
-/*
-extern unsigned char SPI_Rx_buf[];
-extern unsigned char ECG_Data_rdy;
-extern long ADS1x9x_ECG_Data_buf[6];
-extern unsigned short QRS_Heart_Rate;
-extern short ECGRawData[4],ECGFilteredData[4] ;
-extern unsigned short NumPackets,ReqSamples;
-extern unsigned char NumFrames;
-unsigned char Filter_Option = 0;
-//extern unsigned char Filter_Option;     //if we add ecg_processing code,,,,,we change code from top to bottom
-extern unsigned char ECGRecorder_data_Buf[512], Recorder_head,Recorder_tail; 
-//unsigned short dataCnt = 0;
-//unsigned short Resp_Rr_val;
-//unsigned long Page_num;
-extern unsigned short Respiration_Rate ;
-extern struct NANDAddress Read_Recorder_NANDAddress;
-extern struct NANDAddress  Recorder_NANDAddress;
-extern struct NANDAddress  Acquire_NANDAddress;
-extern unsigned char *ECGPacketAcqPrt, *ECGPacketAcqHoldPrt;
-extern unsigned char Dwn_NandReadBuf[256], Dwn_head, Dwn_tail;
+extern unsigned char ADS1292R_Register_Settings_yonghun[16];
 
-extern unsigned int packetCounter , AcqpacketCounter;
-extern unsigned short BlockNum;
-extern unsigned char Store_data_rdy;
-
-unsigned char KeyPressed = 0;
-unsigned char keyCount = 0;
-
-unsigned char Req_Dwnld_occured;
-*/
-
-unsigned char LeadStatus = 0x0F;
-// Global flags set by events
-volatile unsigned char bCDCDataReceived_event = false;// Indicates data has been received without an open rcv operation
-                 
-#define MAX_STR_LENGTH 64
-//char wholeString[MAX_STR_LENGTH] = "";     // The entire input string from the last 'return'
-unsigned int SlowToggle_Period = 20000-1;
-unsigned int FastToggle_Period = 2000-1;
-unsigned short Two_5millisec_Period = 60000;
-
-unsigned int EcgPtr =0;
-unsigned char regval, Live_Streaming_flag = false;
-extern void XT1_Stop(void);
-
-unsigned char ECGTxPacket[64],ECGTxCount,ECGTxPacketRdy ;
-unsigned char ECGRxPacket[64],ECGRxCount, dumy ;
-
-struct ADS1x9x_state ECG_Recoder_state;
-extern unsigned short Respiration_Rate;
-unsigned short timeCtr =0;
-
-union ECG_REC_Data_Packet {
-	unsigned char ucECG_data_rec[32];
-	short sECG_data_rec[16];
-};
-unsigned char ECG_Proc_data_cnt = 0;
-union ECG_REC_Data_Packet ECG_REC_Proc_Data_Packet;
-
+int32_t data[1024];
+int pointer = 0;
+int ma = 0;
+uint32_t data_count = 0;
+int32_t ecg_data;
+//LPFilter filter;
+volatile bool new_data = false;
+int32_t adc_value = 0;
+uint32_t ecg_value = 0;
+int32_t res_value = 0;
 
 //#define ENABLE_LOOPBACK_TEST  /**< if defined, then this example will be a loopback test, which means that TX should be connected to RX to get data loopback. */
 
@@ -209,13 +155,6 @@ static void uart_loopback_test()
 #define UART_HWFC APP_UART_FLOW_CONTROL_DISABLED
 #endif
 
-int32_t data[1024];
-int pointer = 0;
-int ma = 0;
-uint32_t data_count = 0;
-int32_t ecg_data;
-LPFilter filter;
-volatile bool new_data = false;
 
 void drdy_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) 
 {
@@ -227,19 +166,12 @@ int main(void)
 {
     uint8_t value;
     uint32_t count = 0;
-    int32_t adc_value = 0;
-    int32_t filter_out;
-    uint32_t raw_value;
- 
+    //int32_t adc_value = 0;
     uint32_t error_code;
 
 
-    /* Configure board. */
-    bsp_board_init(BSP_INIT_LEDS);
-
     /*uart*/
     uint32_t err_code;
-
     const app_uart_comm_params_t comm_params =
       {
           RX_PIN_NUMBER,
@@ -267,14 +199,12 @@ int main(void)
 
     printf("\r\nUART example started.\r\n");
 
+
+    /*ADS1292 pin define and drdy set up*/
     volatile unsigned short i, j;
 
-    //Init_StartUp();                 //initialize device   //no use 2020 06/16 yonghun
-    //Init_TimerA1();                 //no use 2020 06/16 yonghun
-    //XT1_Stop();                     //no use 2020 06/16 yonghun
+    Pin_Define(); 
 
-
-    Pin_Define();       //put by yh,  2020 06/16 yonghun
     nrf_gpio_pin_write(ADS_RST_PIN, 0);
     nrf_gpio_pin_write(ADS_START_PIN, 0);
 
@@ -283,97 +213,88 @@ int main(void)
     {
         printf("\r\nDriver init failed!\n\r");
     }
+
     nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
     in_config.pull = NRF_GPIO_PIN_PULLDOWN;
 
-    //nrf_gpio_cfg_input(DRDY_PIN, NRF_GPIO_PIN_PULLDOWN);
     error_code = nrf_drv_gpiote_in_init(DRDY_PIN, &in_config, drdy_handler);
     if (error_code != NRF_SUCCESS )
     {
         printf("\r\nInit failed!\n\r");
     }
 
-    ADS1x9x_PowerOn_Init();           //a little change -> it works later change, 2020 06/16 by yh
+
+    /*ADS1292 power set up*/
+    ADS1x9x_PowerOn_Init();          
 
 
-
-
-
-    //Filter_Option = 3;                // Default filter option is 40Hz LowPass
-    //Start_Read_Data_Continuous();      //RDATAC command
-
-    //put setting register here
-
-
-
-
-    /*write and readregister*/
+    /*ASDS1292 write and readregister*/
     ADS1x9x_Enable_Start();				// Enable START (command)
     nrf_delay_us(30000);
 
     Set_ADS1x9x_Chip_Enable();					// CS = 0
     nrf_delay_us(300);
 
-    ADS1x9x_Default_Reg_Init();               //perfect function   by yh   2020 06/16
+    ADS1x9x_Default_Reg_Init();             
+    nrf_delay_us(300);
+
+    ADS1x9x_Read_All_Regs(ADS1292R_Register_Settings_yonghun);
     nrf_delay_us(300);
 
 
-
-    //ADS1x9x_Read_ID_Regs(0x00);
-    //printf("\r\n000000000000\r\n");
-
-    ADS1x9x_Read_All_Regs(ADS1x9xRegVal);//read register success 2020 06/18 by yh
-
-
-    /*read function*/
-    //ADS1x9x_Enable_Start();				// Enable START (SET START to high)
-    //Soft_Start_ADS1x9x();
-    //nrf_delay_us(30000);
-
-    //Set_ADS1x9x_Chip_Enable();					// CS = 0
-    //nrf_delay_us(30000);
-
-    //Start_Read_Data_Continuous();			//RDATAC command      //erase 06/17
-    //nrf_delay_ms(2000);
-    //Read_One_Data();
-
-    //Channel_offset_Command();
-    printf("\r\nRunning...\n\r");
-
-
-    //Enable_ADS1x9x_DRDY_Interrupt();		// Enable DRDY interrupt
-    //ADS1x9x_Enable_Start();				// Enable START (SET START to high)
-
-    //////////////////////////
-    printf("\n\rasdfasdf\n\r");
-
+    /*ASDS1292 read value by RDATAC*/
     ADS1x9x_Enable_Start();				// Enable START (command)
     nrf_delay_us(30000);
     
     Set_ADS1x9x_Chip_Enable();
 
-    Start_Read_Data_Continuous();			//RDATAC command      //erase 06/17
+    //Start_Read_Data_Continuous();			//RDATAC command  // for read data continuous 
 
-    Channel_offset_Command();
+    //Channel_offset_Command();       //erase this code 2020 06/23
 
-    while (nrf_gpio_pin_read(DRDY_PIN) == 0);
+    //while (nrf_gpio_pin_read(DRDY_PIN) == 0);
     nrf_drv_gpiote_in_event_enable(DRDY_PIN, true);
     count = 0;
 
+    printf("\r\nRunning...\n\r");
 
+    unsigned char *data_ptr;     //input by yonghun 2020 06/22 //
+    uint8_t data_buf[9];
 
     while(1)
     {
-        while (new_data == true)     //we must check this drdy code(interrupt)//when fall down -> it works
+        
+        while (new_data == true)    
         {
             //new_data = false;
-            //Read_One_Data();
-            nrf_delay_us(500);
+            Read_One_Data(); 
+            /*
+            data_ptr=ADS1292R_ReadData();
+            for(int i = 0; i < 9; i++)
+            {
+                data_buf[i] = *(data_ptr + i); 
+            }
+            for(int i = 0; i < 9; i++)
+            {
+                printf("   %d   ", data_buf[i]); 
+            }
+            printf("\r\n");
+            nrf_delay_ms(500);  
+            */
+
+            //new_data = false;
+            //Read_One_Data();                          //RDATA command  // for read data once
+            
             adc_value = GetData();
-            printf("%x\n\r", adc_value);
-            nrf_delay_ms(500);   //change this one -> change value
+            printf("%x     ", adc_value);
+            ecg_value = ECG_GetData();
+            printf("     %d\n\r", ecg_value);
+            nrf_delay_ms(20);
+            
             new_data = false;
+            
         }
+        
     }
 }
             

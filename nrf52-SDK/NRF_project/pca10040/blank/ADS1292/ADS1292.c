@@ -38,8 +38,8 @@
 *	        Global Variables										                                  											  *
 **************************************************************************************************************************************************/
 unsigned char ADC_Read_data[16];
-unsigned char ADS129x_SPI_cmd_Flag=0, ADS129x_SPI_data_Flag=0,  SPI_Send_count=0, SPI_Tx_Count = 0, SPI_Tx_buf[16];
-unsigned char SPI_Rx_Data_Flag = 0,  SPI_Rx_buf[16], SPI_Rx_Count=0, SPI_Rx_exp_Count=0 ;
+unsigned char ADS129x_SPI_cmd_Flag=0, ADS129x_SPI_data_Flag=0,  SPI_Send_count=0, SPI_Tx_Count = 0, SPI_Tx_buf[3];
+unsigned char SPI_Rx_Data_Flag = 0,  SPI_Rx_buf[9], SPI_Rx_Count=0, SPI_Rx_exp_Count=0 ;
 unsigned char ECG_Data_rdy;
 long ADS1x9x_ECG_Data_buf[6];   //4bytes, 2020 06/13 yonghun
 
@@ -55,7 +55,7 @@ extern unsigned char Store_data_rdy;
 #define DELAY_COUNT 2
 
 
-
+unsigned char ads1292r_data_buff[9];
 
 /****************************************************************/
 /*    SPI define    */
@@ -137,6 +137,34 @@ unsigned char 	ADS1x9xR_Default_Register_Settings[15] = {
     //GPIO
     0x0C 
 };	
+//now use test
+unsigned char 	ADS1292R_Register_Settings_yonghun[15] = {
+
+    //Device ID read Ony
+    0x00, //fix 
+    //CONFIG1
+    0x02, //fix
+    //CONFIG2
+    0xA3, //fix
+    //LOFF
+    0x10, //fix
+    //CH1SET (PGA gain = 6)
+    0x80, //fix(not use ch1)
+    //CH2SET (PGA gain = 6)
+    0x05, //0x00, // fix(use ch2 for read ecg)
+    //RLD_SENS (default)
+    0x00, //  fix
+    //LOFF_SENS (default)
+    0x00, //fix
+    //LOFF_STAT
+    0x00, //fix
+    //RESP1
+    0x02,
+    //RESP2
+    0x03,
+    //GPIO
+    0x0C 
+};
 	
 unsigned char 	ADS1x9x_Default_Register_Settings[15] = {
 
@@ -389,7 +417,7 @@ void Set_NRF_SPI(void)
     spi_config.mosi_pin = ADS_MOSI_PIN;
     spi_config.sck_pin = ADS_SCK_PIN;
     spi_config.mode = NRF_DRV_SPI_MODE_1;   //check this mode with ADS1292 datasheet, yonghun 2020 6/9
-    spi_config.bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
+    
     // spi_config.frequency = NRF_DRV_SPI_FREQ_500K;
     spi_config.frequency = NRF_DRV_SPI_FREQ_250K;
     APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler, NULL));
@@ -400,7 +428,6 @@ void Set_NRF_SPI(void)
     SPI_Tx_buf[0] = 0x40;
     SPI_Tx_buf[1] = 0x1;
     SPI_Tx_buf[2] = 0;
-    SPI_Tx_buf[3] = 0;
     /*
     P3SEL |= BIT2+BIT1+BIT0;  				// Set SPI peripheral bits
     P3DIR |= BIT0+BIT2;						// Clock and DOUT as output
@@ -454,17 +481,16 @@ void ADS1x9x_SPI_Command_Data(unsigned char Data)         //problem in here we c
     Set_ADS1x9x_Chip_Enable();    //cs low
 
 
-    memset(SPI_Tx_buf, 0, 16);
-    memset(SPI_Rx_buf, 0, 16);
+    memset(SPI_Tx_buf, 0, 3);
+    memset(SPI_Rx_buf, 0, 9);
 
     spi_xfer_done = false;
     SPI_Tx_buf[0] = Data;
-    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 16, SPI_Rx_buf, 1));
-
-    while (!spi_xfer_done) 
-    {
-        __WFE();
-    }
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 1, SPI_Rx_buf, 0));
+    
+    
+    while (!spi_xfer_done);
+    
 	
     //UCB0TXBUF = Data;                                     // Send the data sitting at the pointer DATA to the TX Buffer   //spi communication
     //while ( (UCB0STAT & UCBUSY) );
@@ -701,8 +727,8 @@ void ADS1x9x_Reg_Write (unsigned char READ_WRITE_ADDRESS, unsigned char DATA)
   		
     }
     //define DATA value
-    memset(SPI_Tx_buf, 0, 16);
-    memset(SPI_Rx_buf, 0, 16);
+    memset(SPI_Tx_buf, 0, 3);
+    memset(SPI_Rx_buf, 0, 9);
     spi_xfer_done = false;
 
     SPI_Tx_buf[0] = READ_WRITE_ADDRESS | 0x40;        //SPI_Tx_buf -> 1byte, 10 array  //WREG=write to register
@@ -724,12 +750,11 @@ void ADS1x9x_Reg_Write (unsigned char READ_WRITE_ADDRESS, unsigned char DATA)
 	while ( (UCB0STAT & UCBUSY) );			// USCI_B0 TX buffer ready?
 	i = UCB0RXBUF;
         */
-    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 16, SPI_Rx_buf, 3));
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 3, SPI_Rx_buf, 0));
 
-    while (!spi_xfer_done) 
-    {
-        __WFE();
-    }
+    while (!spi_xfer_done);
+
+
         //must check UCB0RXBUF 2020 06/13 yonghun
 }
 /*********************************************************************************************************
@@ -738,19 +763,16 @@ void ADS1x9x_Reg_Write (unsigned char READ_WRITE_ADDRESS, unsigned char DATA)
 unsigned char ADS1x9x_Reg_Read(unsigned char Reg_address)
 {
     unsigned char retVal;
-    memset(SPI_Tx_buf, 0, 16);
-    memset(SPI_Rx_buf, 0, 16);
+    memset(SPI_Tx_buf, 0, 3);
+    memset(SPI_Rx_buf, 0, 9);
     spi_xfer_done = false;
     SPI_Tx_buf[0] = 0x20 | Reg_address;               //SPI_Tx_buf -> 1byte, 10 array  //WREG=write to register
     SPI_Tx_buf[1] = 0x01;							// Read number of bytes - 1
 		
     Set_ADS1x9x_Chip_Enable();					// Set chip select to low
 
-    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 16, SPI_Rx_buf, 3));
-    while (!spi_xfer_done) 
-    {
-        __WFE();
-    }
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 3, SPI_Rx_buf, 3));
+    while (!spi_xfer_done);
 
 		/*
 		UCB0TXBUF = SPI_Tx_buf[0];                  // Send the first data to the TX Buffer
@@ -790,11 +812,11 @@ void ADS1x9x_Default_Reg_Init(void)
     for ( Reg_Init_i =0; Reg_Init_i <100;Reg_Init_i++);
         //acess success    by yh 2020 06/16 
 	
-    if ((ADS1x9xRegVal[0] | 0X20) == 0x20)    //check register value contain 0000 00"1"0    //why?????????????   divide if and else if
+    if ((ADS1292R_Register_Settings_yonghun[0] | 0X20) == 0x20)    //change this code to read register correctly
     {
         for ( Reg_Init_i = 1; Reg_Init_i < 12; Reg_Init_i++)
         {
-            ADS1x9x_Reg_Write(Reg_Init_i,ADS1x9xR_Default_Register_Settings[Reg_Init_i]);
+            ADS1x9x_Reg_Write(Reg_Init_i,ADS1292R_Register_Settings_yonghun[Reg_Init_i]);
         }
     }
     else
@@ -1319,33 +1341,108 @@ int32_t GetData() //32 exchange need, 2020 6/16 by songyonghun//change 6/17
 {
     
     int32_t raw_value;
-    memset(SPI_Tx_buf, 0, 16);
-    memset(SPI_Rx_buf, 0, 16);
+    memset(SPI_Tx_buf, 0, 1);
+    memset(SPI_Rx_buf, 0, 9);
     spi_xfer_done = false;
-    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 6, SPI_Rx_buf, 6));
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 0, SPI_Rx_buf, 9));
 
-    while (!spi_xfer_done) 
-    {
-        __WFE();
-    }
+    while (!spi_xfer_done);
 
-    raw_value = 0x00000000;
+    raw_value = 0x00;
     
-    //we use down code
-    
+    //  when read ch0 -> other person use this code
+    /*
     if (SPI_Rx_buf[3] & 0x80) 
     {
         raw_value = 0xff;
     }
-    
-    
-    
+    */
+
     raw_value <<= 8;
-    raw_value += SPI_Rx_buf[3];//raw_value += SPI_Rx_buf[3];
+    raw_value += SPI_Rx_buf[0];
     raw_value <<= 8;
-    raw_value += SPI_Rx_buf[4];//raw_value += SPI_Rx_buf[4];
+    raw_value += SPI_Rx_buf[1];
     raw_value <<= 8;
-    raw_value += SPI_Rx_buf[5];//raw_value += SPI_Rx_buf[5];
+    raw_value += SPI_Rx_buf[2];
     return raw_value;         //4byte = 0x00 + SPI_RX_buf[3] + SPI_RX_buf[4] + SPI_RX_buf[5] //read MSB
+}
+
+
+
+int32_t ECG_GetData() //32 exchange need, 2020 6/16 by songyonghun//change 6/17
+{
+    
+    uint32_t raw_value;           //change int321 - > uint32
+    memset(SPI_Tx_buf, 0, 1);
+    memset(SPI_Rx_buf, 0, 9);
+    spi_xfer_done = false;
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 0, SPI_Rx_buf, 9));
+
+    while (!spi_xfer_done);
+
+    raw_value = 0x00;
+    
+    if (SPI_Rx_buf[6] & 0x80 == 0x80) 
+    {
+        raw_value = 0xff;
+    }    
+    
+    raw_value <<= 8;
+    raw_value += SPI_Rx_buf[6];
+    raw_value <<= 8;
+    raw_value += SPI_Rx_buf[7];
+    raw_value <<= 8;
+    raw_value += SPI_Rx_buf[8];
+
+    return raw_value;         //4byte = 0x00 + SPI_RX_buf[3] + SPI_RX_buf[4] + SPI_RX_buf[5] //read MSB
+}
+
+
+
+int32_t RES_GetData() //32 exchange need, 2020 6/16 by songyonghun//change 6/17
+{
+    
+    int32_t raw_value;
+    memset(SPI_Tx_buf, 0, 1);
+    memset(SPI_Rx_buf, 0, 9);
+    spi_xfer_done = false;
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 0, SPI_Rx_buf, 9));
+
+    while (!spi_xfer_done);
+
+    raw_value = 0x00;
+    
+    //  when read ch0 -> other person use this code
+    /*
+    if (SPI_Rx_buf[3] & 0x80) 
+    {
+        raw_value = 0xff;
+    }
+    */
+    raw_value <<= 8;
+    raw_value += SPI_Rx_buf[3];
+    raw_value <<= 8;
+    raw_value += SPI_Rx_buf[4];
+    raw_value <<= 8;
+    raw_value += SPI_Rx_buf[5];
+    return raw_value;         //4byte = 0x00 + SPI_RX_buf[3] + SPI_RX_buf[4] + SPI_RX_buf[5] //read MSB
+}
+
+
+
+
+/////// by yonghun 2020 06/22 ///////////
+char* ADS1292R_ReadData(void)
+{
+        memset(SPI_Rx_buf, 0, 9);
+	spi_xfer_done = false;
+	APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, SPI_Tx_buf, 0, SPI_Rx_buf, 9));
+	while(spi_xfer_done == false);
+
+	for(int i=0;i<9;i++)
+	{
+		ads1292r_data_buff[i]=SPI_Rx_buf[i];
+	}
+	return ads1292r_data_buff;
 }
 // End of file

@@ -38,7 +38,12 @@ void ADS1x9x_Read_ID_Regs(unsigned char ads_regs);
 
 void spi_event_handler(nrf_drv_spi_evt_t const * p_event, void *p_context);
 int32_t GetData();
+int32_t ECG_GetData();
+int32_t RES_GetData();
+
 void Pin_Define(void);
+
+char* ADS1292R_ReadData(void);
 
 /****************************************************************/
 /* ADS1x9x PIN DEFINE */    //by yonghun 2020 06/15 
