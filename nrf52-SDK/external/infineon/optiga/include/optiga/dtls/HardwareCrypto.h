@@ -25,6 +25,7 @@
  * \file HardwareCrypto.h
  *
  * \brief This file contains structures and prototypes of hardware crypto layer.
+ *
  * \addtogroup grMutualAuth
  * @{
  *
@@ -68,8 +69,6 @@ int32_t HWCL_Decrypt(const sCL_d* PpsCL,const sbBlob_d* PpsBlobCipherText,sbBlob
 void HWCL_Close(sCL_d* PpsCL);
 
 #endif //__HWCRYPTO_H__
-
 /**
 * @}
 */
-

@@ -25,7 +25,6 @@
 *
 * \brief This file contains a light weight logger implementation.
 *
-*
 * \addtogroup  grLogger
 * @{
 *
@@ -189,7 +188,7 @@ void ConvUint32ToDecString (uint32_t dwVal, uint8_t* PprgbDecStr, \
 */
 static void GetSystemDateTime(char_t *pszSystemTime)
 {
-        uint32_t dwTimeInMilliSecs = 0;
+    uint32_t dwTimeInMilliSecs = 0;
 
     if(pszSystemTime == NULL)
     {
@@ -519,11 +518,11 @@ static uint32_t dwLayerEnabler = 0;
 */
 typedef struct sLogMessage {
     ///Message to be logged
-        char_t* pzStringMessage;
+    char_t* pzStringMessage;
     ///Message Type
-        eLogLayer eLogMsgLayer;
+    eLogLayer eLogMsgLayer;
     ///Message Level
-        eLogLevel eLogMsgLevel;
+    eLogLevel eLogMsgLevel;
 }sLogMessage;
 
 
@@ -620,7 +619,6 @@ eSetState Util_GetLogLayerState(eLogLayer PeLayer)
         return (((dwLayerEnabler)&(1<<PeLayer))?eEnable:eDisable);
     else
         return eInvalid;
-
 }
 
 
@@ -633,7 +631,7 @@ eSetState Util_GetLogLayerState(eLogLayer PeLayer)
 */
 void Util_SetLogWriter(pFWriteData2 pWriter,void* pHdl)
 {
-        pfWriter2 = pWriter;
+    pfWriter2 = pWriter;
     pHandle = pHdl;
 }
 
@@ -645,14 +643,14 @@ static void Util_WriteMessage(sLogMessage* psLogMessage)
 {
 
     char_t charBuffer[103];
-        char timeString[9];  // space for "HH:MM:SS\0"
-        char_t* szMsgLevel[eError] = {LOGGER_LEVEL_INFO,
-                                                                        LOGGER_LEVEL_WARNING,
-                                                                        LOGGER_LEVEL_ERROR};
+    char timeString[9];  // space for "HH:MM:SS\0"
+    char_t* szMsgLevel[eError] = {LOGGER_LEVEL_INFO,
+                                    LOGGER_LEVEL_WARNING,
+                                    LOGGER_LEVEL_ERROR};
 
-        char_t* szMsgType[eTL] = {LOGGER_TYPE_HANDSHAKE,
-                                                                LOGGER_TYPE_RECORDLAYER,
-                                                                LOGGER_TYPE_TRANSPORTLAYER};
+    char_t* szMsgType[eTL] = {LOGGER_TYPE_HANDSHAKE,
+                                LOGGER_TYPE_RECORDLAYER,
+                                LOGGER_TYPE_TRANSPORTLAYER};
 
         GetSystemDateTime(timeString);
 
@@ -680,11 +678,11 @@ static void Util_WriteMessage(sLogMessage* psLogMessage)
 */
 void Util_LogMsgArray(char* pzMsg, uint8_t* PrgbBuffer, uint16_t wLen, eLogLayer eLayer, eLogLevel eLevel)
 {
-        sLogMessage sLogMes;
+    sLogMessage sLogMes;
     uint16_t wCount = wLen;
     uint8_t bBytes = 25;
     uint8_t * prgbbuf = PrgbBuffer;
-        eSetState eCurrentState = Util_GetLogLevelState(eLevel);
+    eSetState eCurrentState = Util_GetLogLevelState(eLevel);
     uint8_t rgbHexString[100];
     do
     {
@@ -725,8 +723,8 @@ void Util_LogMsgArray(char* pzMsg, uint8_t* PrgbBuffer, uint16_t wLen, eLogLayer
 */
 void Util_LogMessage(char* pzMsg, eLogLayer eLayer, eLogLevel eLevel)
 {
-        sLogMessage sLogMes;
-        eSetState eCurrentState = Util_GetLogLevelState(eLevel);
+    sLogMessage sLogMes;
+    eSetState eCurrentState = Util_GetLogLevelState(eLevel);
 
     do
     {

@@ -26,16 +26,14 @@
 *
 * \brief This file contains utility functions
 *
-*
-*
+* \defgroup gr Opiga utility functions
+* \ingroup infineon_api
+* @{
 */
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-
 #include "optiga/common/Datatypes.h"
-
-
 
 ///Greater than
 #define  GREATER_THAN 0x00000001
@@ -150,4 +148,9 @@ void Utility_SetUint32 (uint8_t* PprgbData,uint32_t Pdwvalue);
 void Utility_Memmove(puint8_t PprgbDestBuf, const puint8_t PprgbSrcBuf, uint16_t PwLength);
 
 #endif //_UTIL_H_
+
+/**
+* @}
+*/
+
 

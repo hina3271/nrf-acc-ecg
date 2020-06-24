@@ -69,30 +69,9 @@ NRF_LOG_MODULE_REGISTER();
 #define BLE_OTS_OLCP_SUPPORT_FEATURE_REQ_NUM_OBJECTS_bp 2
 #define BLE_OTS_OLCP_SUPPORT_FEATURE_CLEAR_MARKING_bp   3
 
-#define MODULE_INITIALIZED (p_ots_c->initialized)   /**< Macro designating whether the module was initialized properly. */
+#define MODULE_INITIALIZED (p_ots_c->initialized)   /**< Macro designating whether the module has been initialized properly. */
 
 static const ble_uuid_t m_ots_uuid = {BLE_UUID_OTS_SERVICE, BLE_UUID_TYPE_BLE};  /**< Object Transfer Service UUID. */
-
-
-/**@brief Function for intercepting the errors of GATTC and the BLE GATT Queue.
- *
- * @param[in] nrf_error   Error code.
- * @param[in] p_ctx       Parameter from the event handler.
- * @param[in] conn_handle Connection handle.
- */
-static void gatt_error_handler(uint32_t   nrf_error,
-                               void     * p_ctx,
-                               uint16_t   conn_handle)
-{
-    nrf_ble_ots_c_t * p_ots_c = (nrf_ble_ots_c_t *)p_ctx;
-
-    NRF_LOG_DEBUG("A GATT Client error has occurred on conn_handle: 0X%X", conn_handle);
-
-    if (p_ots_c->err_handler != NULL)
-    {
-        p_ots_c->err_handler(nrf_error);
-    }
-}
 
 
 ret_code_t nrf_ble_ots_c_init(nrf_ble_ots_c_t      * p_ots_c,
@@ -102,21 +81,15 @@ ret_code_t nrf_ble_ots_c_init(nrf_ble_ots_c_t      * p_ots_c,
     VERIFY_PARAM_NOT_NULL(p_ots_c);
     VERIFY_PARAM_NOT_NULL(p_ots_c_init);
     VERIFY_PARAM_NOT_NULL(p_ots_c_init->evt_handler);
-    VERIFY_PARAM_NOT_NULL(p_ots_c_init->p_gatt_queue);
-
     memset (p_ots_c, 0, sizeof(nrf_ble_ots_c_t));
 
-    p_ots_c->conn_handle      = BLE_CONN_HANDLE_INVALID;
-    p_ots_c->evt_handler      = p_ots_c_init->evt_handler;
-    p_ots_c->err_handler      = p_ots_c_init->err_handler;
-    p_ots_c->p_gatt_queue     = p_ots_c_init->p_gatt_queue;
-    p_ots_c->gatt_err_handler = gatt_error_handler;
+    p_ots_c->conn_handle = BLE_CONN_HANDLE_INVALID;
+    p_ots_c->evt_handler = p_ots_c_init->evt_handler;
 
     err_code = ble_db_discovery_evt_register(&m_ots_uuid);
     VERIFY_SUCCESS(err_code);
 
     p_ots_c->initialized = true;
-
     return err_code;
 }
 
@@ -125,8 +98,8 @@ ret_code_t nrf_ble_ots_c_init(nrf_ble_ots_c_t      * p_ots_c,
 
    @param[in] p_ots_c Pointer to the GATT Service client structure instance.
 
-   @return True, if the Object Transfer service handles are valid.
-   @return False, if the Object Transfer service handles are invalid.
+   @return True if the Object Transfer service handles are valid.
+   @return False if the Object Transfer service handles are invalid
  */
 static bool ots_gatt_handles_are_valid(const nrf_ble_ots_c_t * const p_ots_c)
 {
@@ -141,17 +114,11 @@ ret_code_t nrf_ble_ots_c_feature_read(nrf_ble_ots_c_t * const p_ots_c)
 {
     VERIFY_MODULE_INITIALIZED();
 
-    nrf_ble_gq_req_t read_req;
-
-    memset(&read_req, 0, sizeof(nrf_ble_gq_req_t));
-
-    read_req.type                     = NRF_BLE_GQ_REQ_GATTC_READ;
-    read_req.error_handler.cb         = p_ots_c->gatt_err_handler;
-    read_req.error_handler.p_ctx      = (nrf_ble_ots_c_t *)p_ots_c;
-    read_req.params.gattc_read.handle = p_ots_c->service.ots_feature_char.handle_value;
-    read_req.params.gattc_read.offset = 0;
-
-    return nrf_ble_gq_item_add(p_ots_c->p_gatt_queue, &read_req, p_ots_c->conn_handle);
+    ret_code_t err_code;
+    err_code = sd_ble_gattc_read(p_ots_c->conn_handle,
+                                 p_ots_c->service.ots_feature_char.handle_value,
+                                 0);
+    return err_code;
 }
 
 
@@ -163,18 +130,11 @@ ret_code_t nrf_ble_ots_c_obj_size_read(nrf_ble_ots_c_t * const p_ots_c)
     {
         return NRF_ERROR_INVALID_STATE;
     }
-    
-    nrf_ble_gq_req_t read_req;
-
-    memset(&read_req, 0, sizeof(nrf_ble_gq_req_t));
-
-    read_req.type                     = NRF_BLE_GQ_REQ_GATTC_READ;
-    read_req.error_handler.cb         = p_ots_c->gatt_err_handler;
-    read_req.error_handler.p_ctx      = (nrf_ble_ots_c_t *)p_ots_c;
-    read_req.params.gattc_read.handle = p_ots_c->service.object_size_char.handle_value;
-    read_req.params.gattc_read.offset = 0;
-
-    return nrf_ble_gq_item_add(p_ots_c->p_gatt_queue, &read_req, p_ots_c->conn_handle);
+    ret_code_t err_code;
+    err_code = sd_ble_gattc_read(p_ots_c->conn_handle,
+                                 p_ots_c->service.object_size_char.handle_value,
+                                 0);
+    return err_code;
 }
 
 
@@ -186,18 +146,11 @@ ret_code_t nrf_ble_ots_c_obj_properties_read(nrf_ble_ots_c_t * const p_ots_c)
     {
         return NRF_ERROR_INVALID_STATE;
     }
-
-    nrf_ble_gq_req_t read_req;
-
-    memset(&read_req, 0, sizeof(nrf_ble_gq_req_t));
-
-    read_req.type                     = NRF_BLE_GQ_REQ_GATTC_READ;
-    read_req.error_handler.cb         = p_ots_c->gatt_err_handler;
-    read_req.error_handler.p_ctx      = (nrf_ble_ots_c_t *)p_ots_c;
-    read_req.params.gattc_read.handle = p_ots_c->service.object_prop_char.handle_value;
-    read_req.params.gattc_read.offset = 0;
-
-    return nrf_ble_gq_item_add(p_ots_c->p_gatt_queue, &read_req, p_ots_c->conn_handle);
+    ret_code_t err_code;
+    err_code = sd_ble_gattc_read(p_ots_c->conn_handle,
+                                 p_ots_c->service.object_prop_char.handle_value,
+                                 0);
+    return err_code;
 }
 
 
@@ -363,18 +316,13 @@ void nrf_ble_ots_c_on_db_disc_evt(nrf_ble_ots_c_t const * const p_ots_c,
         }
         evt.evt_type    = NRF_BLE_OTS_C_EVT_DISCOVERY_COMPLETE;
         evt.conn_handle = p_evt->conn_handle;
-    }
-    else if ((p_evt->evt_type == BLE_DB_DISCOVERY_SRV_NOT_FOUND) ||
-             (p_evt->evt_type == BLE_DB_DISCOVERY_ERROR))
-    {
-        evt.evt_type = NRF_BLE_OTS_C_EVT_DISCOVERY_FAILED;
+        p_ots_c->evt_handler(&evt);
     }
     else
     {
-        return;
+        evt.evt_type = NRF_BLE_OTS_C_EVT_DISCOVERY_FAILED;
+        p_ots_c->evt_handler(&evt);
     }
-
-    p_ots_c->evt_handler(&evt);
 }
 
 
@@ -450,7 +398,7 @@ void nrf_ble_ots_c_on_ble_evt(ble_evt_t const * const p_ble_evt,
 }
 
 
-ret_code_t nrf_ble_ots_c_handles_assign(nrf_ble_ots_c_t               * const p_ots_c,
+ret_code_t nrf_ble_ots_c_handles_assign(nrf_ble_ots_c_t                 * const p_ots_c,
                                         uint16_t                        const conn_handle,
                                         nrf_ble_ots_c_service_t const * const p_peer_handles)
 {
@@ -468,8 +416,7 @@ ret_code_t nrf_ble_ots_c_handles_assign(nrf_ble_ots_c_t               * const p_
         p_ots_c->service.object_action_cp_cccd.handle       = p_peer_handles->object_action_cp_cccd.handle;
 
     }
-
-    return nrf_ble_gq_conn_handle_register(p_ots_c->p_gatt_queue, conn_handle);
+    return NRF_SUCCESS;
 }
 
 
