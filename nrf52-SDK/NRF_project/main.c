@@ -41,7 +41,7 @@
 #include "app_util_platform.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
-#include "boards.h"
+#include "acc-ecg-board.h"
 #include "app_error.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -75,19 +75,43 @@
  * 
  * *****************************************************************************************************/
 // Function declarations
-extern unsigned char ADS1x9xRegVal[16];
-extern unsigned char ADS1292R_Register_Settings_yonghun[16];
 
-int32_t data[1024];
-int pointer = 0;
-int ma = 0;
-uint32_t data_count = 0;
-int32_t ecg_data;
-//LPFilter filter;
-volatile bool new_data = false;
-int32_t adc_value = 0;
-uint32_t ecg_value = 0;
-int32_t res_value = 0;
+void Init_StartUp(void);
+void Init_TimerA1(void);
+unsigned char retInString(char* string);
+
+// Function declarations
+
+extern unsigned char ADS1x9xRegVal[16];
+
+
+unsigned char LeadStatus = 0x0F;
+// Global flags set by events
+volatile unsigned char bCDCDataReceived_event = false;// Indicates data has been received without an open rcv operation
+                 
+#define MAX_STR_LENGTH 64
+unsigned int SlowToggle_Period = 20000-1;
+unsigned int FastToggle_Period = 2000-1;
+unsigned short Two_5millisec_Period = 60000;
+
+unsigned int EcgPtr =0;
+unsigned char regval, Live_Streaming_flag = false;
+extern void XT1_Stop(void);
+
+unsigned char ECGTxPacket[64],ECGTxCount,ECGTxPacketRdy ;
+unsigned char ECGRxPacket[64],ECGRxCount, dumy ;
+
+struct ADS1x9x_state ECG_Recoder_state;
+extern unsigned short Respiration_Rate;
+unsigned short timeCtr =0;
+
+union ECG_REC_Data_Packet {
+	unsigned char ucECG_data_rec[32];
+	short sECG_data_rec[16];
+};
+unsigned char ECG_Proc_data_cnt = 0;
+union ECG_REC_Data_Packet ECG_REC_Proc_Data_Packet;
+
 
 //#define ENABLE_LOOPBACK_TEST  /**< if defined, then this example will be a loopback test, which means that TX should be connected to RX to get data loopback. */
 
@@ -108,53 +132,17 @@ void uart_error_handle(app_uart_evt_t * p_event)
 }
 
 
-#ifdef ENABLE_LOOPBACK_TEST
-/* Use flow control in loopback test. */
-#define UART_HWFC APP_UART_FLOW_CONTROL_ENABLED
-
-/** @brief Function for setting the @ref ERROR_PIN high, and then enter an infinite loop.
- */
-static void show_error(void)
-{
-
-    bsp_board_leds_on();
-    while (true)
-    {
-        // Do nothing.
-    }
-}
-
-
-/** @brief Function for testing UART loop back.
- *  @details Transmitts one character at a time to check if the data received from the loopback is same as the transmitted data.
- *  @note  @ref TX_PIN_NUMBER must be connected to @ref RX_PIN_NUMBER)
- */
-static void uart_loopback_test()
-{
-    uint8_t * tx_data = (uint8_t *)("\r\nLOOPBACK_TEST\r\n");
-    uint8_t   rx_data;
-
-    // Start sending one byte and see if you get the same
-    for (uint32_t i = 0; i < MAX_TEST_DATA_BYTES; i++)
-    {
-        uint32_t err_code;
-        while (app_uart_put(tx_data[i]) != NRF_SUCCESS);
-
-        nrf_delay_ms(10);
-        err_code = app_uart_get(&rx_data);
-
-        if ((rx_data != tx_data[i]) || (err_code != NRF_SUCCESS))
-        {
-            show_error();
-        }
-    }
-    return;
-}
-#else
 /* When UART is used for communication with the host do not use flow control.*/
 #define UART_HWFC APP_UART_FLOW_CONTROL_DISABLED
 #endif
 
+int32_t data[1024];
+int pointer = 0;
+int ma = 0;
+uint32_t data_count = 0;
+int32_t ecg_data;
+LPFilter filter;
+volatile bool new_data = false;
 
 void drdy_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) 
 {
@@ -166,12 +154,19 @@ int main(void)
 {
     uint8_t value;
     uint32_t count = 0;
-    //int32_t adc_value = 0;
+    int32_t adc_value = 0;
+    int32_t filter_out;
+    uint32_t raw_value;
+ 
     uint32_t error_code;
 
 
+    /* Configure board. */
+    bsp_board_init(BSP_INIT_LEDS);
+
     /*uart*/
     uint32_t err_code;
+
     const app_uart_comm_params_t comm_params =
       {
           RX_PIN_NUMBER,
@@ -180,11 +175,8 @@ int main(void)
           CTS_PIN_NUMBER,
           UART_HWFC,
           false,
-#if defined (UART_PRESENT)
           NRF_UART_BAUDRATE_115200   
-#else
-          NRF_UARTE_BAUDRATE_115200
-#endif
+
       };
 
     APP_UART_FIFO_INIT(&comm_params,
@@ -199,12 +191,14 @@ int main(void)
 
     printf("\r\nUART example started.\r\n");
 
-
-    /*ADS1292 pin define and drdy set up*/
     volatile unsigned short i, j;
 
-    Pin_Define(); 
+    //Init_StartUp();                 //initialize device   //no use 2020 06/16 yonghun
+    //Init_TimerA1();                 //no use 2020 06/16 yonghun
+    //XT1_Stop();                     //no use 2020 06/16 yonghun
 
+
+    Pin_Define();       //put by yh,  2020 06/16 yonghun
     nrf_gpio_pin_write(ADS_RST_PIN, 0);
     nrf_gpio_pin_write(ADS_START_PIN, 0);
 
@@ -213,88 +207,94 @@ int main(void)
     {
         printf("\r\nDriver init failed!\n\r");
     }
-
     nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
     in_config.pull = NRF_GPIO_PIN_PULLDOWN;
 
+    //nrf_gpio_cfg_input(DRDY_PIN, NRF_GPIO_PIN_PULLDOWN);
     error_code = nrf_drv_gpiote_in_init(DRDY_PIN, &in_config, drdy_handler);
     if (error_code != NRF_SUCCESS )
     {
         printf("\r\nInit failed!\n\r");
     }
 
-
-    /*ADS1292 power set up*/
-    ADS1x9x_PowerOn_Init();          
+    ADS1x9x_PowerOn_Init();           //a little change -> it works later change, 2020 06/16 by yh
 
 
-    /*ASDS1292 write and readregister*/
+
+
+
+    //Start_Read_Data_Continuous();      //RDATAC command
+
+    //put setting register here
+
+
+    /*write and readregister*/
     ADS1x9x_Enable_Start();				// Enable START (command)
     nrf_delay_us(30000);
 
     Set_ADS1x9x_Chip_Enable();					// CS = 0
     nrf_delay_us(300);
 
-    ADS1x9x_Default_Reg_Init();             
-    nrf_delay_us(300);
-
-    ADS1x9x_Read_All_Regs(ADS1292R_Register_Settings_yonghun);
+    ADS1x9x_Default_Reg_Init();               //perfect function   by yh   2020 06/16
     nrf_delay_us(300);
 
 
-    /*ASDS1292 read value by RDATAC*/
+
+    //ADS1x9x_Read_ID_Regs(0x00);
+    //printf("\r\n000000000000\r\n");
+
+    ADS1x9x_Read_All_Regs(ADS1x9xRegVal);//read register success 2020 06/18 by yh
+
+
+    /*read function*/
+    //ADS1x9x_Enable_Start();				// Enable START (SET START to high)
+    //Soft_Start_ADS1x9x();
+    //nrf_delay_us(30000);
+
+    //Set_ADS1x9x_Chip_Enable();					// CS = 0
+    //nrf_delay_us(30000);
+
+    //Start_Read_Data_Continuous();			//RDATAC command      //erase 06/17
+    //nrf_delay_ms(2000);
+    //Read_One_Data();
+
+    //Channel_offset_Command();
+    printf("\r\nRunning...\n\r");
+
+
+    //Enable_ADS1x9x_DRDY_Interrupt();		// Enable DRDY interrupt
+    //ADS1x9x_Enable_Start();				// Enable START (SET START to high)
+
+    //////////////////////////
+    printf("\n\rasdfasdf\n\r");
+
     ADS1x9x_Enable_Start();				// Enable START (command)
     nrf_delay_us(30000);
     
     Set_ADS1x9x_Chip_Enable();
 
-    //Start_Read_Data_Continuous();			//RDATAC command  // for read data continuous 
+    Start_Read_Data_Continuous();			//RDATAC command      //erase 06/17
 
-    //Channel_offset_Command();       //erase this code 2020 06/23
+    Channel_offset_Command();
 
-    //while (nrf_gpio_pin_read(DRDY_PIN) == 0);
+    while (nrf_gpio_pin_read(DRDY_PIN) == 0);
     nrf_drv_gpiote_in_event_enable(DRDY_PIN, true);
     count = 0;
 
-    printf("\r\nRunning...\n\r");
 
-    unsigned char *data_ptr;     //input by yonghun 2020 06/22 //
-    uint8_t data_buf[9];
 
     while(1)
     {
-        
-        while (new_data == true)    
+        while (new_data == true)     //we must check this drdy code(interrupt)//when fall down -> it works
         {
             //new_data = false;
-            Read_One_Data(); 
-            /*
-            data_ptr=ADS1292R_ReadData();
-            for(int i = 0; i < 9; i++)
-            {
-                data_buf[i] = *(data_ptr + i); 
-            }
-            for(int i = 0; i < 9; i++)
-            {
-                printf("   %d   ", data_buf[i]); 
-            }
-            printf("\r\n");
-            nrf_delay_ms(500);  
-            */
-
-            //new_data = false;
-            //Read_One_Data();                          //RDATA command  // for read data once
-            
+            //Read_One_Data();
+            nrf_delay_us(500);
             adc_value = GetData();
-            printf("%x     ", adc_value);
-            ecg_value = ECG_GetData();
-            printf("     %d\n\r", ecg_value);
-            nrf_delay_ms(20);
-            
+            printf("%x\n\r", adc_value);
+            nrf_delay_ms(500);   //change this one -> change value
             new_data = false;
-            
         }
-        
     }
 }
             
