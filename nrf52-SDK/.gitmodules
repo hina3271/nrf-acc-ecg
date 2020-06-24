@@ -1,0 +1,6 @@
+[submodule "components/toolchain/gcc-arm-none-eabi-5_4"]
+        path = components/toolchain/gcc-arm-none-eabi-5_4
+	url = git@github.com:sograindustries/gcc-arm-none-eabi-5_4.git
+[submodule "external/micro-ecc/micro-ecc"]
+	path = external/micro-ecc/micro-ecc
+	url = https://github.com/kmackay/micro-ecc.git
