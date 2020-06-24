@@ -136,11 +136,11 @@ static void on_connected_evt(nrf_ble_gatt_t * p_gatt, ble_evt_t const * p_ble_ev
             p_link->att_mtu_desired = p_gatt->att_mtu_desired_periph;
             break;
 
-#if !defined (S112) && !defined(S312) && !defined(S113)
+#if !defined (S112) && !defined(S312)
         case BLE_GAP_ROLE_CENTRAL:
             p_link->att_mtu_desired = p_gatt->att_mtu_desired_central;
             break;
-#endif // !defined (S112) && !defined(S312) && !defined(S113)
+#endif // !defined (S112) && !defined(S312)
 
         default:
             // Ignore.

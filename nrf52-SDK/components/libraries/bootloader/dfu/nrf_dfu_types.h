@@ -99,8 +99,6 @@ extern "C" {
     #define BOOTLOADER_SETTINGS_ADDRESS     (0x0002F000UL)
 #elif defined( NRF52832_XXAA )
     #define BOOTLOADER_SETTINGS_ADDRESS     (0x0007F000UL)
-#elif defined( NRF52833_XXAA )
-    #define BOOTLOADER_SETTINGS_ADDRESS     (0x0007F000UL)
 #elif defined(NRF52840_XXAA)
     #define BOOTLOADER_SETTINGS_ADDRESS     (0x000FF000UL)
 #else
@@ -108,6 +106,13 @@ extern "C" {
 #endif
 
 #define BOOTLOADER_SETTINGS_PAGE_SIZE       (CODE_PAGE_SIZE)
+
+/**
+ * @brief Location of the pointer to MBR params page.
+ *
+ * See also @c MBR_PARAMS_PAGE_ADDRESS in @c app_util.h.
+ */
+#define NRF_UICR_MBR_PARAMS_PAGE_ADDRESS    (MBR_PARAM_PAGE_ADDR)
 #define NRF_MBR_PARAMS_PAGE_SIZE            (CODE_PAGE_SIZE)
 
 /** @brief Page location of the MBR parameters page address.
@@ -115,8 +120,6 @@ extern "C" {
 #if defined(NRF52840_XXAA) || defined(NRF52840_XXAA_ENGA)
     #define NRF_MBR_PARAMS_PAGE_ADDRESS         (0x000FE000UL)
 #elif defined(NRF52832_XXAA)
-    #define NRF_MBR_PARAMS_PAGE_ADDRESS         (0x0007E000UL)
-#elif defined(NRF52833_XXAA)
     #define NRF_MBR_PARAMS_PAGE_ADDRESS         (0x0007E000UL)
 #elif defined(NRF52810_XXAA)
     #define NRF_MBR_PARAMS_PAGE_ADDRESS         (0x0002E000UL)
