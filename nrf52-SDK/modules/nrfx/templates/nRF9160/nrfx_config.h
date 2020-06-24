@@ -81,11 +81,14 @@
 #endif
 // <o> NRFX_CLOCK_CONFIG_LF_SRC  - LF clock source.
 
-// <1=> RC
-// <2=> XTAL
+// <0=> RC
+// <1=> XTAL
+// <2=> Synth
+// <131073=> External Low Swing
+// <196609=> External Full Swing
 
 #ifndef NRFX_CLOCK_CONFIG_LF_SRC
-#define NRFX_CLOCK_CONFIG_LF_SRC 2
+#define NRFX_CLOCK_CONFIG_LF_SRC 1
 #endif
 
 // <o> NRFX_CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority.
@@ -479,14 +482,6 @@
 #endif
 
 // </e>
-
-// </e>
-
-// <e> NRFX_NVMC_ENABLED - nrfx_nvmc - NVMC peripheral driver
-//==========================================================
-#ifndef NRFX_NVMC_ENABLED
-#define NRFX_NVMC_ENABLED 1
-#endif
 
 // </e>
 
@@ -1843,22 +1838,22 @@
 #ifndef NRFX_UARTE_ENABLED
 #define NRFX_UARTE_ENABLED 1
 #endif
-// <q> NRFX_UARTE0_ENABLED - Enables UARTE0 instances
+// <o> NRFX_UARTE0_ENABLED - Enables UARTE0 instances
 #ifndef NRFX_UARTE0_ENABLED
 #define NRFX_UARTE0_ENABLED 1
 #endif
 
-// <q> NRFX_UARTE1_ENABLED - Enables UARTE1 instance.
+// <o> NRFX_UARTE1_ENABLED - Enables UARTE1 instance.
 #ifndef NRFX_UARTE1_ENABLED
 #define NRFX_UARTE1_ENABLED 1
 #endif
 
-// <q> NRFX_UARTE2_ENABLED - Enables UARTE2 instance.
+// <o> NRFX_UARTE2_ENABLED - Enables UARTE2 instance.
 #ifndef NRFX_UARTE2_ENABLED
 #define NRFX_UARTE2_ENABLED 1
 #endif
 
-// <q> NRFX_UARTE3_ENABLED - Enables UARTE3 instance.
+// <o> NRFX_UARTE3_ENABLED - Enables UARTE3 instance.
 #ifndef NRFX_UARTE3_ENABLED
 #define NRFX_UARTE3_ENABLED 1
 #endif

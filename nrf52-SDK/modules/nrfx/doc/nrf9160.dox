@@ -8,8 +8,6 @@
 
 @ref nrf_dppi
 
-@ref nrf_ficr
-
 @ref nrf_gpio
 
 @ref nrf_gpiote
@@ -17,8 +15,6 @@
 @ref nrf_i2s
 
 @ref nrf_kmu
-
-@ref nrf_nvmc
 
 @ref nrf_pdm
 

@@ -72,13 +72,26 @@ extern "C" {
 #endif
 
 /**
- * \brief Sets the gpio pin to high state.
- */
+* Sets the gpio pin to high state
+*
+* <b>API Details:</b>
+*      The API sets the pin high, only if the pin is assigned to a valid gpio context.<br>
+*      Otherwise the API returns without any failure status.<br>
+*
+*\param[in] p_gpio_context Pointer to pal layer gpio context
+*
+*/
 void pal_gpio_set_high(const pal_gpio_t* p_gpio_context);
 
 /**
- * \brief Sets the gpio pin to Low state.
- */
+* Sets the gpio pin to low state
+*
+* <b>API Details:</b>
+*      The API set the pin low, only if the pin is assigned to a valid gpio context.<br>
+*      Otherwise the API returns without any failure status.<br>
+*
+*\param[in] p_gpio_context Pointer to pal layer gpio context
+*/
 void pal_gpio_set_low(const pal_gpio_t* p_gpio_context);
 
 #ifdef __cplusplus

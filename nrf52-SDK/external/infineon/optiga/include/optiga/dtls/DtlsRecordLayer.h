@@ -25,6 +25,7 @@
  * \file DtlsRecordLayer.h
  *
  * \brief This file contains structures and prototypes of record layer functionalities for DTLS.
+ *
  * \addtogroup grOCP
  * @{
  *

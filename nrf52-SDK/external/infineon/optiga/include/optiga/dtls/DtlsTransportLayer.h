@@ -39,10 +39,6 @@
 
 #ifdef MODULE_ENABLE_DTLS_MUTUAL_AUTH
 
-
-
-
-
 /**
  * \brief This function initializes transport layer communication structure.
  */
@@ -75,5 +71,3 @@ void DtlsTL_Disconnect(sTL_d* PpsTL);
 /**
 * @}
 */
-
-

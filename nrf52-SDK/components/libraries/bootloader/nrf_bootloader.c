@@ -68,9 +68,7 @@ static volatile bool m_flash_write_done;
 #if !(defined(NRF_BL_DFU_ENTER_METHOD_BUTTON)    && \
       defined(NRF_BL_DFU_ENTER_METHOD_PINRESET)  && \
       defined(NRF_BL_DFU_ENTER_METHOD_GPREGRET)  && \
-      defined(NRF_BL_DFU_ENTER_METHOD_BUTTONLESS)&& \
-      defined(NRF_BL_RESET_DELAY_MS)             && \
-      defined(NRF_BL_DEBUG_PORT_DISABLE))
+      defined(NRF_BL_DFU_ENTER_METHOD_BUTTONLESS))
     #error Configuration file is missing flags. Update sdk_config.h.
 #endif
 
@@ -121,7 +119,10 @@ static void do_reset(void * p_context)
 
     NRF_LOG_FINAL_FLUSH();
 
-    nrf_delay_ms(NRF_BL_RESET_DELAY_MS);
+#if NRF_MODULE_ENABLED(NRF_LOG_BACKEND_RTT)
+    // To allow the buffer to be flushed by the host.
+    nrf_delay_ms(100);
+#endif
 
     NVIC_SystemReset();
 }
@@ -165,10 +166,6 @@ static void dfu_observer(nrf_dfu_evt_type_t evt_type)
         case NRF_DFU_EVT_DFU_COMPLETED:
         case NRF_DFU_EVT_DFU_ABORTED:
             bootloader_reset(true);
-            break;
-        case NRF_DFU_EVT_TRANSPORT_DEACTIVATED:
-            // Reset the internal state of the DFU settings to the last stored state.
-            nrf_dfu_settings_reinit();
             break;
         default:
             break;
@@ -427,11 +424,6 @@ ret_code_t nrf_bootloader_init(nrf_dfu_observer_t observer)
     bool                                  dfu_enter = false;
 
     m_user_observer = observer;
-
-    if (NRF_BL_DEBUG_PORT_DISABLE)
-    {
-        nrf_bootloader_debug_port_disable();
-    }
 
     if (NRF_BL_DFU_ENTER_METHOD_BUTTON)
     {

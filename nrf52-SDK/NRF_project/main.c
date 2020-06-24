@@ -41,7 +41,7 @@
 #include "app_util_platform.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
-#include "acc-ecg-board.h"
+#include "boards.h"
 #include "app_error.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -83,13 +83,43 @@ unsigned char retInString(char* string);
 // Function declarations
 
 extern unsigned char ADS1x9xRegVal[16];
+/*
+extern unsigned char SPI_Rx_buf[];
+extern unsigned char ECG_Data_rdy;
+extern long ADS1x9x_ECG_Data_buf[6];
+extern unsigned short QRS_Heart_Rate;
+extern short ECGRawData[4],ECGFilteredData[4] ;
+extern unsigned short NumPackets,ReqSamples;
+extern unsigned char NumFrames;
+unsigned char Filter_Option = 0;
+//extern unsigned char Filter_Option;     //if we add ecg_processing code,,,,,we change code from top to bottom
+extern unsigned char ECGRecorder_data_Buf[512], Recorder_head,Recorder_tail; 
+//unsigned short dataCnt = 0;
+//unsigned short Resp_Rr_val;
+//unsigned long Page_num;
+extern unsigned short Respiration_Rate ;
+extern struct NANDAddress Read_Recorder_NANDAddress;
+extern struct NANDAddress  Recorder_NANDAddress;
+extern struct NANDAddress  Acquire_NANDAddress;
+extern unsigned char *ECGPacketAcqPrt, *ECGPacketAcqHoldPrt;
+extern unsigned char Dwn_NandReadBuf[256], Dwn_head, Dwn_tail;
 
+extern unsigned int packetCounter , AcqpacketCounter;
+extern unsigned short BlockNum;
+extern unsigned char Store_data_rdy;
+
+unsigned char KeyPressed = 0;
+unsigned char keyCount = 0;
+
+unsigned char Req_Dwnld_occured;
+*/
 
 unsigned char LeadStatus = 0x0F;
 // Global flags set by events
 volatile unsigned char bCDCDataReceived_event = false;// Indicates data has been received without an open rcv operation
                  
 #define MAX_STR_LENGTH 64
+//char wholeString[MAX_STR_LENGTH] = "";     // The entire input string from the last 'return'
 unsigned int SlowToggle_Period = 20000-1;
 unsigned int FastToggle_Period = 2000-1;
 unsigned short Two_5millisec_Period = 60000;
@@ -132,6 +162,49 @@ void uart_error_handle(app_uart_evt_t * p_event)
 }
 
 
+#ifdef ENABLE_LOOPBACK_TEST
+/* Use flow control in loopback test. */
+#define UART_HWFC APP_UART_FLOW_CONTROL_ENABLED
+
+/** @brief Function for setting the @ref ERROR_PIN high, and then enter an infinite loop.
+ */
+static void show_error(void)
+{
+
+    bsp_board_leds_on();
+    while (true)
+    {
+        // Do nothing.
+    }
+}
+
+
+/** @brief Function for testing UART loop back.
+ *  @details Transmitts one character at a time to check if the data received from the loopback is same as the transmitted data.
+ *  @note  @ref TX_PIN_NUMBER must be connected to @ref RX_PIN_NUMBER)
+ */
+static void uart_loopback_test()
+{
+    uint8_t * tx_data = (uint8_t *)("\r\nLOOPBACK_TEST\r\n");
+    uint8_t   rx_data;
+
+    // Start sending one byte and see if you get the same
+    for (uint32_t i = 0; i < MAX_TEST_DATA_BYTES; i++)
+    {
+        uint32_t err_code;
+        while (app_uart_put(tx_data[i]) != NRF_SUCCESS);
+
+        nrf_delay_ms(10);
+        err_code = app_uart_get(&rx_data);
+
+        if ((rx_data != tx_data[i]) || (err_code != NRF_SUCCESS))
+        {
+            show_error();
+        }
+    }
+    return;
+}
+#else
 /* When UART is used for communication with the host do not use flow control.*/
 #define UART_HWFC APP_UART_FLOW_CONTROL_DISABLED
 #endif
@@ -175,8 +248,11 @@ int main(void)
           CTS_PIN_NUMBER,
           UART_HWFC,
           false,
+#if defined (UART_PRESENT)
           NRF_UART_BAUDRATE_115200   
-
+#else
+          NRF_UARTE_BAUDRATE_115200
+#endif
       };
 
     APP_UART_FIFO_INIT(&comm_params,
@@ -223,9 +299,12 @@ int main(void)
 
 
 
+    //Filter_Option = 3;                // Default filter option is 40Hz LowPass
     //Start_Read_Data_Continuous();      //RDATAC command
 
     //put setting register here
+
+
 
 
     /*write and readregister*/
